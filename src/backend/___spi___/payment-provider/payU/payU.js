@@ -1,28 +1,27 @@
 // @ts-nocheck
 import { fetch } from "wix-fetch";
 import { getSecret } from "wix-secrets-backend";
-import { isTest } from './payU-env';
-
-// Test PayU data
-// POS ID (pos_id):                    300746
-// Second key (MD5):                   b6ca15b0d1020e8094d9b5f8d163db54
-// OAuth protocol - client_id:         300746
-// OAuth protocol - client_secret:     2ee86a66e5d97e3fadc400c9f19b065d
-
-const payUTestPointOfSalesId = "3007461";
-const payUTestClientId = "300746";
-const payUTestClientSecret = "2ee86a66e5d97e3fadc400c9f19b065d";
+import {
+  isTest,
+  PayUTestClientId,
+  PayUTestPointOfSalesId,
+  PayUTestClientSecret,
+  PayUAuthUrl,
+  PayUOrdersUrl,
+  PayUNotifyUrl,
+  PayUContinueUrl,
+} from './payU-env';
 
 async function getClientId() {
   if (isTest()) {
-    return payUTestClientId;
+    return PayUTestClientId;
   }
   return await getSecret("PAYU_CLIENT_ID");
 }
 
 async function getClientSecret() {
   if (isTest()) {
-    return payUTestClientSecret;
+    return PayUTestClientSecret;
   }
   return await getSecret("PAYU_CLIENT_SECRET");
 }
@@ -32,9 +31,7 @@ async function getPayuToken() {
   const clientId = await getClientId();
   const clientSecret = await getClientSecret();
 
-  const response = await fetch(
-    "https://secure.payu.com/pl/standard/user/oauth/authorize",
-    {
+  const response = await fetch(PayUAuthUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
 
@@ -93,12 +90,12 @@ export async function createTransaction(options) {
       };
     }
 
-    const posId = payUTestPointOfSalesId; // await getSecret("PAYU_POS_ID");
+    const posId = PayUTestPointOfSalesId; // await getSecret("PAYU_POS_ID");
     const token = await getPayuToken();
 
     const payuOrder = {
-      notifyUrl: "https://www.agnieszkalozinskacom.com/_functions/payuNotify",
-      continueUrl: "https://www.agnieszkalozinskacom.com/thank-you-page",
+      notifyUrl: PayUNotifyUrl,
+      continueUrl: PayUContinueUrl,
       merchantPosId: posId,
       customerIp: options?.fraudInformation?.remoteIp || "127.0.0.1",
       extOrderId: wixTransactionId,
@@ -114,7 +111,7 @@ export async function createTransaction(options) {
       }),
     };
 
-    const response = await fetch("https://secure.payu.com/api/v2_1/orders/", {
+    const response = await fetch(PayUOrdersUrl, {
       method: "POST",
       headers: {
         Authorization: "Bearer " + token,
