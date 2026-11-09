@@ -1,11 +1,17 @@
+import { PayUEnabled, isTest } from './payU-env';
+
 export function getConfig() {
+  if(!PayUEnabled) {
+    console.log("PayU getConfig - disabled: no payment method will be registered");
+  }
+  console.log("PayU getConfig - enabled");
   return {
-    title: "PayU",
+    title: `PayU ${isTest() ? '[TEST ONLY - NOT REAL PAYMENT]' : ''}`,
     paymentMethods: [
       {
         hostedPage: {
           title: "PayU - BLIK / Karta / Przelew",
-          billingAddressMandatoryFields: ["EMAIL", "COUNTRY_CODE"],
+          billingAddressMandatoryFields: ['ZIPCODE', 'CITY', 'STATE', 'ADDRESS', 'COUNTRY_CODE', 'EMAIL', 'FIRST_NAME', 'LAST_NAME', 'STREET', 'HOUSE_NUMBER'],
           logos: {
             white: {
               svg: "https://commons.wikimedia.org/wiki/Special:FilePath/PayU.svg",
@@ -22,7 +28,7 @@ export function getConfig() {
     credentialsFields: [
       {
         simpleField: {
-          name: "posId",
+          name: "payUPosId",
           label: "PayU POS ID",
         },
       },

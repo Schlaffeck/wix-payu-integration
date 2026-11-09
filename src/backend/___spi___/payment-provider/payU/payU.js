@@ -1,10 +1,36 @@
 // @ts-nocheck
 import { fetch } from "wix-fetch";
 import { getSecret } from "wix-secrets-backend";
+import { isTest } from './payU-env';
+
+// Test PayU data
+// POS ID (pos_id):                    300746
+// Second key (MD5):                   b6ca15b0d1020e8094d9b5f8d163db54
+// OAuth protocol - client_id:         300746
+// OAuth protocol - client_secret:     2ee86a66e5d97e3fadc400c9f19b065d
+
+const payUTestPointOfSalesId = "3007461";
+const payUTestClientId = "300746";
+const payUTestClientSecret = "2ee86a66e5d97e3fadc400c9f19b065d";
+
+async function getClientId() {
+  if (isTest()) {
+    return payUTestClientId;
+  }
+  return await getSecret("PAYU_CLIENT_ID");
+}
+
+async function getClientSecret() {
+  if (isTest()) {
+    return payUTestClientSecret;
+  }
+  return await getSecret("PAYU_CLIENT_SECRET");
+}
 
 async function getPayuToken() {
-  const clientId = await getSecret("PAYU_CLIENT_ID");
-  const clientSecret = await getSecret("PAYU_CLIENT_SECRET");
+  console.log("PayU get token - start");
+  const clientId = await getClientId();
+  const clientSecret = await getClientSecret();
 
   const response = await fetch(
     "https://secure.payu.com/pl/standard/user/oauth/authorize",
@@ -22,26 +48,34 @@ async function getPayuToken() {
   );
 
   if (!response.ok) {
+    console.error("PayU get token - response error: " + response);
     throw new Error("Error OAuth PayU: " + response.status);
   }
   const data = await response.json();
-  if (!data.access_token) throw new Error("PayU did not return a token");
+  if (!data.access_token) { 
+    console.error("PayU get token - no token provided: " + data);
+    throw new Error("PayU did not return a token");
+  }
+  console.log("PayU get token - success");
   return data.access_token;
 }
 
 export async function connectAccount(options) {
+  console.log("PayU connect account");
   return {
-    accountId: options?.credentials?.posId || "payu",
+    accountId: options?.credentials?.payUPosId || "payu",
     credentials: options?.credentials || {},
   };
 }
 
 export async function createTransaction(options) {
+  console.log("PayU create transaction - start");
   try {
     const wixTransactionId = options?.wixTransactionId;
     const order = options?.order;
 
     if (!wixTransactionId || !order) {
+      console.warn("PayU get token - no wix transaction id");
       return {
         errorCode: "PROVIDER_ERROR",
         errorMessage: "No transaction data",
@@ -52,18 +86,19 @@ export async function createTransaction(options) {
     const totalAmount = order.description?.totalAmount || 0;
 
     if (items.length === 0) {
+      console.warn("PayU get token - no products in the order");
       return {
         errorCode: "PROVIDER_ERROR",
         errorMessage: "No products in the order",
       };
     }
 
-    const posId = await getSecret("PAYU_POS_ID");
+    const posId = payUTestPointOfSalesId; // await getSecret("PAYU_POS_ID");
     const token = await getPayuToken();
 
     const payuOrder = {
-      notifyUrl: "https://www.kulikstyle.com/_functions/payuNotify",
-      continueUrl: "https://www.kulikstyle.com/thank-you-page",
+      notifyUrl: "https://www.agnieszkalozinskacom.com/_functions/payuNotify",
+      continueUrl: "https://www.agnieszkalozinskacom.com/thank-you-page",
       merchantPosId: posId,
       customerIp: options?.fraudInformation?.remoteIp || "127.0.0.1",
       extOrderId: wixTransactionId,
@@ -100,6 +135,7 @@ export async function createTransaction(options) {
           (data?.status?.statusCode || response.status),
       };
     }
+    console.log("PayU get token - success: " + data.orderId);
 
     return {
       pluginTransactionId: data.orderId,
