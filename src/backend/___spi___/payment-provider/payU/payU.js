@@ -27,7 +27,7 @@ async function getClientSecret() {
 }
 
 async function getPayuToken() {
-  console.log("PayU get token - start");
+  console.debug("PayU get token - start");
   const clientId = await getClientId();
   const clientSecret = await getClientSecret();
 
@@ -53,12 +53,12 @@ async function getPayuToken() {
     console.error("PayU get token - no token provided: " + data);
     throw new Error("PayU did not return a token");
   }
-  console.log("PayU get token - success");
+  console.debug("PayU get token - success");
   return data.access_token;
 }
 
 export async function connectAccount(options) {
-  console.log("PayU connect account");
+  console.debug("PayU connect account");
   return {
     accountId: options?.credentials?.payUPosId || "payu",
     credentials: options?.credentials || {},
@@ -66,7 +66,7 @@ export async function connectAccount(options) {
 }
 
 export async function createTransaction(options) {
-  console.log("PayU create transaction - start");
+  console.debug("PayU create transaction - start");
   try {
     const wixTransactionId = options?.wixTransactionId;
     const order = options?.order;
@@ -132,7 +132,7 @@ export async function createTransaction(options) {
           (data?.status?.statusCode || response.status),
       };
     }
-    console.log("PayU get token - success: " + data.orderId);
+    console.debug("PayU get token - success: " + data.orderId);
 
     return {
       pluginTransactionId: data.orderId,
