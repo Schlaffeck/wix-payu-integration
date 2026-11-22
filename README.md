@@ -45,8 +45,26 @@ read from PayU by `extOrderId`:
 |---|---|
 | `COMPLETED`, `WAITING_FOR_CONFIRMATION` | `successUrl` |
 | `NEW` / `PENDING` (after ~3 s of retries) | `pendingUrl` |
-| `CANCELED` | `cancelUrl` (`errorUrl` if PayU added `error=`) |
-| `error=` from PayU (not completed) | `errorUrl` |
+| `CANCELED` | cart page, "canceled" popup |
+| `error=` from PayU (not completed) | cart page, "failed" popup |
+
+#### Payment problem popup
+
+A failed or canceled payment sends the buyer to `/cart-page?payuPayment=failed|canceled`.
+The cart page code (`src/pages/Cart.chcy.js`) removes the flag and opens the
+lightbox **`PayU Payment Problem`**, passing `{ paymentProblem, message }`.
+Create that lightbox in the Wix Editor and show the message, e.g. in its page code:
+
+```js
+import wixWindowFrontend from "wix-window-frontend";
+
+$w.onReady(() => {
+  const { message } = wixWindowFrontend.lightbox.getContext() || {};
+  $w("#paymentProblemText").text = message;
+});
+```
+
+Names and messages are in `src/public/payU-payment-result.js`.
 | status lookup failed | `pendingUrl` |
 
 ## Project structure

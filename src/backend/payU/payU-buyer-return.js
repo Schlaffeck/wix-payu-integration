@@ -7,14 +7,17 @@
 // Flow:
 //   1. Read and verify the signed return parameters.
 //   2. Ask PayU for the order status, rechecking briefly while payment is in progress.
-//   3. Redirect the buyer to the Wix page for that status (see pickReturnTarget).
+//   3. Redirect the buyer to the page for that status (see pickReturnTarget):
+//      a failed or canceled payment goes back to the cart, which shows a popup.
 import { response } from "wix-http-functions";
 import { getPayuOrderByExtId } from "backend/payU/payU-client";
 import {
   readReturnParams,
   pickReturnTarget,
   resolveReturnUrl,
+  buildCartUrlForPaymentProblem,
 } from "backend/payU/payU-return";
+import { PaymentProblem } from "public/payU-payment-result";
 import { isAwaitingPayment } from "backend/payU/payU-order-status";
 import { getPayUContinueUrl } from "backend/payU/payU-env";
 import { logInfo, logWarn, logError, describeError } from "backend/payU/payU-log";
@@ -23,6 +26,11 @@ const LOG_SCOPE = "Return";
 // BLIK and card payments often settle a few seconds after the buyer returns.
 const PAYMENT_RECHECK_ATTEMPTS = 2;
 const PAYMENT_RECHECK_DELAY_MILLISECONDS = 1500;
+// Return pages replaced by the cart with a popup.
+const paymentProblemByReturnPage = {
+  errorUrl: PaymentProblem.FAILED,
+  cancelUrl: PaymentProblem.CANCELED,
+};
 
 export async function handleBuyerReturnFromPayu(request) {
   const payuFailureCode = request.query?.error;
@@ -43,6 +51,17 @@ export async function handleBuyerReturnFromPayu(request) {
   });
 
   const returnPage = pickReturnTarget(orderStatus, payuFailureCode);
+  const paymentProblem = paymentProblemByReturnPage[returnPage];
+  if (paymentProblem) {
+    logInfo(LOG_SCOPE, "redirecting buyer to cart", {
+      tx: wixTransactionId,
+      status: orderStatus,
+      error: payuFailureCode,
+      paymentProblem,
+    });
+    return redirectBuyerTo(buildCartUrlForPaymentProblem(paymentProblem));
+  }
+
   const { url, field } = resolveReturnUrl(returnParameters.urls, returnPage);
   logInfo(LOG_SCOPE, "redirecting buyer", {
     tx: wixTransactionId,
