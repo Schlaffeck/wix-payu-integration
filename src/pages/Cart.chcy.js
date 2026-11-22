@@ -1,10 +1,14 @@
 // API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// “Hello, World!” Example: https://learn-code.wix.com/en/article/hello-world
+import wixLocationFrontend from "wix-location-frontend";
+import wixWindowFrontend from "wix-window-frontend";
+import { showPaymentProblemPopupIfNeeded } from "public/payment-status";
 
 $w.onReady(function () {
-    // Write your JavaScript here
-
-    // To select an element by ID use: $w('#elementID')
-
-    // Click 'Preview' to run your code
+    // Fallback landing page after a failed or canceled payment (?paymentStatus=...),
+    // used when the checkout page address is not known.
+    showPaymentProblemPopupIfNeeded({
+        query: wixLocationFrontend.query,
+        removeQueryParameters: (names) => wixLocationFrontend.queryParams.remove(names),
+        openLightbox: (name, context) => wixWindowFrontend.openLightbox(name, context),
+    });
 });

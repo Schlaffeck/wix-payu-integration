@@ -6,7 +6,7 @@ import {
   getPayuOrderByExtId,
 } from "backend/payU/payU-client";
 import { buildContinueUrl } from "backend/payU/payU-return";
-import { getPayUContinueUrl } from "backend/payU/payU-env";
+import { getPayUContinueUrl, PayUCartUrl } from "backend/payU/payU-env";
 import { post_payuNotify, get_payuReturn } from "backend/http-functions";
 
 vi.mock("backend/payU/payU-client", async (importOriginal) => ({
@@ -168,6 +168,11 @@ describe("get_payuReturn", () => {
     return { query: Object.fromEntries(new URL(url + extra).searchParams) };
   };
   const location = (res) => res.headers.Location;
+  const withPaymentStatus = (url, paymentStatus) => {
+    const result = new URL(url);
+    result.searchParams.set("paymentStatus", paymentStatus);
+    return result.toString();
+  };
 
   afterEach(() => {
     vi.useRealTimers();
@@ -191,7 +196,6 @@ describe("get_payuReturn", () => {
   it.each([
     ["COMPLETED", "successUrl"],
     ["WAITING_FOR_CONFIRMATION", "successUrl"],
-    ["CANCELED", "cancelUrl"],
   ])("redirects %s to %s", async (status, field) => {
     getPayuOrderByExtId.mockResolvedValue({ status });
     const res = await get_payuReturn(await returnRequest());
@@ -200,11 +204,34 @@ describe("get_payuReturn", () => {
     expect(location(res)).toBe(returnUrls[field]);
   });
 
-  it("sends failed payments to the error page without waiting", async () => {
-    getPayuOrderByExtId.mockResolvedValue({ status: "PENDING" });
+  it("sends canceled payments back to checkout with paymentStatus=canceled", async () => {
+    getPayuOrderByExtId.mockResolvedValue({ status: "CANCELED" });
+    const res = await get_payuReturn(await returnRequest());
+    expect(res.status).toBe(302);
+    expect(location(res)).toBe(withPaymentStatus(returnUrls.cancelUrl, "canceled"));
+  });
+
+  it("falls back to the cart page when Wix gave no checkout URLs", async () => {
+    getPayuOrderByExtId.mockResolvedValue({ status: "CANCELED" });
+    const url = await buildContinueUrl("W1", { successUrl: returnUrls.successUrl });
+    const res = await get_payuReturn({ query: Object.fromEntries(new URL(url).searchParams) });
+    expect(location(res)).toBe(PayUCartUrl + "?paymentStatus=canceled");
+  });
+
+  it.each(["PENDING", "CANCELED"])(
+    "sends failed payments (%s with error=501) back to checkout with paymentStatus=failed, without waiting",
+    async (status) => {
+      getPayuOrderByExtId.mockResolvedValue({ status });
+      const res = await get_payuReturn(await returnRequest("&error=501"));
+      expect(getPayuOrderByExtId).toHaveBeenCalledTimes(1);
+      expect(location(res)).toBe(withPaymentStatus(returnUrls.errorUrl, "failed"));
+    },
+  );
+
+  it("does not show a popup when the buyer paid despite error=501", async () => {
+    getPayuOrderByExtId.mockResolvedValue({ status: "COMPLETED" });
     const res = await get_payuReturn(await returnRequest("&error=501"));
-    expect(getPayuOrderByExtId).toHaveBeenCalledTimes(1);
-    expect(location(res)).toBe(returnUrls.errorUrl);
+    expect(location(res)).toBe(returnUrls.successUrl);
   });
 
   it("rechecks a pending order and redirects once it completes", async () => {

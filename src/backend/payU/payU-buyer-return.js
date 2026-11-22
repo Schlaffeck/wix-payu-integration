@@ -7,7 +7,9 @@
 // Flow:
 //   1. Read and verify the signed return parameters.
 //   2. Ask PayU for the order status, rechecking briefly while payment is in progress.
-//   3. Redirect the buyer to the Wix page for that status (see pickReturnTarget).
+//   3. Redirect the buyer to the page for that status (see pickReturnTarget):
+//      a failed or canceled payment goes back to checkout with ?paymentStatus=...,
+//      where the order is kept and a popup asks to try again.
 import { response } from "wix-http-functions";
 import { getPayuOrderByExtId } from "backend/payU/payU-client";
 import {
@@ -15,14 +17,20 @@ import {
   pickReturnTarget,
   resolveReturnUrl,
 } from "backend/payU/payU-return";
+import { PaymentStatus, addPaymentStatusToUrl } from "public/payment-status";
 import { isAwaitingPayment } from "backend/payU/payU-order-status";
-import { getPayUContinueUrl } from "backend/payU/payU-env";
+import { getPayUContinueUrl, PayUCartUrl } from "backend/payU/payU-env";
 import { logInfo, logWarn, logError, describeError } from "backend/payU/payU-log";
 
 const LOG_SCOPE = "Return";
 // BLIK and card payments often settle a few seconds after the buyer returns.
 const PAYMENT_RECHECK_ATTEMPTS = 2;
 const PAYMENT_RECHECK_DELAY_MILLISECONDS = 1500;
+// Return pages that get a payment status popup.
+const paymentStatusByReturnPage = {
+  errorUrl: PaymentStatus.FAILED,
+  cancelUrl: PaymentStatus.CANCELED,
+};
 
 export async function handleBuyerReturnFromPayu(request) {
   const payuFailureCode = request.query?.error;
@@ -44,14 +52,26 @@ export async function handleBuyerReturnFromPayu(request) {
 
   const returnPage = pickReturnTarget(orderStatus, payuFailureCode);
   const { url, field } = resolveReturnUrl(returnParameters.urls, returnPage);
+  const paymentStatus = paymentStatusByReturnPage[returnPage];
   logInfo(LOG_SCOPE, "redirecting buyer", {
     tx: wixTransactionId,
     status: orderStatus,
     error: payuFailureCode,
     target: returnPage,
     used: field,
+    paymentStatus,
   });
+  if (paymentStatus) {
+    return redirectBuyerTo(checkoutUrlWithPaymentStatus(url, field, paymentStatus));
+  }
   return redirectBuyerTo(url);
+}
+
+// Wix's error and cancel return URLs lead back to checkout for this order.
+// Without them, the cart is the closest page that still has the products.
+function checkoutUrlWithPaymentStatus(returnUrl, returnUrlField, paymentStatus) {
+  const pageUrl = returnUrlField === "fallback" ? PayUCartUrl : returnUrl;
+  return addPaymentStatusToUrl(pageUrl, paymentStatus);
 }
 
 // Returns the PayU order status, or null when it cannot be read.
