@@ -3,8 +3,7 @@
 // which picks the Wix return page by PayU order status. The Wix return URLs
 // travel in the continueUrl itself (no storage), signed to prevent open
 // redirects.
-import { PayUReturnUrl, PayUCartUrl, getPayUContinueUrl } from "backend/payU/payU-env";
-import { PAYMENT_RESULT_QUERY_PARAMETER } from "public/payU-payment-result";
+import { PayUReturnUrl, getPayUContinueUrl } from "backend/payU/payU-env";
 import { signValue, verifySignedValue } from "backend/payU/payU-client";
 import { logWarn } from "backend/payU/payU-log";
 import { PayUOrderStatus, hasBuyerPaid } from "backend/payU/payU-order-status";
@@ -124,11 +123,4 @@ export function resolveReturnUrl(urls, target) {
     }
   }
   return { url: getPayUContinueUrl(), field: "fallback" };
-}
-
-// Cart URL that makes the cart page show the payment problem popup.
-export function buildCartUrlForPaymentProblem(paymentProblem) {
-  const cartUrl = new URL(PayUCartUrl);
-  cartUrl.searchParams.set(PAYMENT_RESULT_QUERY_PARAMETER, paymentProblem);
-  return cartUrl.toString();
 }

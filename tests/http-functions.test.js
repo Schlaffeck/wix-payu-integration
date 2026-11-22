@@ -168,7 +168,11 @@ describe("get_payuReturn", () => {
     return { query: Object.fromEntries(new URL(url + extra).searchParams) };
   };
   const location = (res) => res.headers.Location;
-  const cartWith = (paymentProblem) => PayUCartUrl + "?payuPayment=" + paymentProblem;
+  const withPaymentStatus = (url, paymentStatus) => {
+    const result = new URL(url);
+    result.searchParams.set("paymentStatus", paymentStatus);
+    return result.toString();
+  };
 
   afterEach(() => {
     vi.useRealTimers();
@@ -200,20 +204,27 @@ describe("get_payuReturn", () => {
     expect(location(res)).toBe(returnUrls[field]);
   });
 
-  it("sends canceled payments to the cart with a canceled popup", async () => {
+  it("sends canceled payments back to checkout with paymentStatus=canceled", async () => {
     getPayuOrderByExtId.mockResolvedValue({ status: "CANCELED" });
     const res = await get_payuReturn(await returnRequest());
     expect(res.status).toBe(302);
-    expect(location(res)).toBe(cartWith("canceled"));
+    expect(location(res)).toBe(withPaymentStatus(returnUrls.cancelUrl, "canceled"));
+  });
+
+  it("falls back to the cart page when Wix gave no checkout URLs", async () => {
+    getPayuOrderByExtId.mockResolvedValue({ status: "CANCELED" });
+    const url = await buildContinueUrl("W1", { successUrl: returnUrls.successUrl });
+    const res = await get_payuReturn({ query: Object.fromEntries(new URL(url).searchParams) });
+    expect(location(res)).toBe(PayUCartUrl + "?paymentStatus=canceled");
   });
 
   it.each(["PENDING", "CANCELED"])(
-    "sends failed payments (%s with error=501) to the cart with a failed popup, without waiting",
+    "sends failed payments (%s with error=501) back to checkout with paymentStatus=failed, without waiting",
     async (status) => {
       getPayuOrderByExtId.mockResolvedValue({ status });
       const res = await get_payuReturn(await returnRequest("&error=501"));
       expect(getPayuOrderByExtId).toHaveBeenCalledTimes(1);
-      expect(location(res)).toBe(cartWith("failed"));
+      expect(location(res)).toBe(withPaymentStatus(returnUrls.errorUrl, "failed"));
     },
   );
 

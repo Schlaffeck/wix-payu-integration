@@ -1,10 +1,11 @@
 // API Reference: https://www.wix.com/velo/reference/api-overview/introduction
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindowFrontend from "wix-window-frontend";
-import { showPaymentProblemPopupIfNeeded } from "public/payU-payment-result";
+import { showPaymentProblemPopupIfNeeded } from "public/payment-status";
 
 $w.onReady(function () {
-    // After a failed or canceled PayU payment the buyer lands here with ?payuPayment=...
+    // Fallback landing page after a failed or canceled payment (?paymentStatus=...),
+    // used when the checkout page address is not known.
     showPaymentProblemPopupIfNeeded({
         query: wixLocationFrontend.query,
         removeQueryParameters: (names) => wixLocationFrontend.queryParams.remove(names),

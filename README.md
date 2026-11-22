@@ -45,15 +45,20 @@ read from PayU by `extOrderId`:
 |---|---|
 | `COMPLETED`, `WAITING_FOR_CONFIRMATION` | `successUrl` |
 | `NEW` / `PENDING` (after ~3 s of retries) | `pendingUrl` |
-| `CANCELED` | cart page, "canceled" popup |
-| `error=` from PayU (not completed) | cart page, "failed" popup |
+| `CANCELED` | checkout, "canceled" popup |
+| `error=` from PayU (not completed) | checkout, "failed" popup |
 
 #### Payment problem popup
 
-A failed or canceled payment sends the buyer to `/cart-page?payuPayment=failed|canceled`.
-The cart page code (`src/pages/Cart.chcy.js`) removes the flag and opens the
-lightbox **`PayU Payment Problem`**, passing `{ paymentProblem, message }`.
-Create that lightbox in the Wix Editor and show the message, e.g. in its page code:
+A failed or canceled payment sends the buyer back to checkout (Wix's
+`errorUrl` / `cancelUrl`), where the order is kept and another payment method
+can be chosen, with `?paymentStatus=failed|canceled` added. If Wix gave no such
+URL, the cart page (`/cart-page`) is used instead.
+
+The checkout and cart page code (`src/pages/Checkout.pbfhv.js`,
+`src/pages/Cart.chcy.js`) removes the parameter and opens the lightbox
+**`Payment Problem`**, passing `{ paymentStatus, message }`. Create that
+lightbox in the Wix Editor and show the message, e.g. in its page code:
 
 ```js
 import wixWindowFrontend from "wix-window-frontend";
@@ -64,7 +69,8 @@ $w.onReady(() => {
 });
 ```
 
-Names and messages are in `src/public/payU-payment-result.js`.
+The parameter, lightbox name and messages are provider-neutral and live in
+`src/public/payment-status.js`, so another payment provider can reuse them.
 | status lookup failed | `pendingUrl` |
 
 ## Project structure

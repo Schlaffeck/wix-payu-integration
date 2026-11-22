@@ -12,7 +12,7 @@ export const PayUNotifyUrl = "https://www.agnieszkalozinska.com/_functions/payuN
 export const PayUReturnUrl = "https://www.agnieszkalozinska.com/_functions/payuReturn";
 // Fallback when the Wix return URLs are unknown.
 export const PayUContinueUrl = "https://www.agnieszkalozinska.com/thank-you-page";
-// Buyer lands here after a failed or canceled payment.
+// Buyer lands here after a failed or canceled payment when Wix gave no checkout URL.
 export const PayUCartUrl = "https://www.agnieszkalozinska.com/cart-page";
 
 export function getPayUContinueUrl(orderId) {

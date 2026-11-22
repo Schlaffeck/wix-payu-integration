@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { PayUReturnUrl, PayUCartUrl, getPayUContinueUrl } from "backend/payU/payU-env";
+import { PayUReturnUrl, getPayUContinueUrl } from "backend/payU/payU-env";
 import {
   buildContinueUrl,
   readReturnParams,
   pickReturnTarget,
   resolveReturnUrl,
-  buildCartUrlForPaymentProblem,
 } from "backend/payU/payU-return";
 
 const site = "https://www.agnieszkalozinska.com/checkout?state=%7B%22a%22%3A1%7D&step=";
@@ -136,12 +135,5 @@ describe("resolveReturnUrl", () => {
       field: "fallback",
     });
     expect(resolveReturnUrl(undefined, "errorUrl").field).toBe("fallback");
-  });
-});
-
-describe("buildCartUrlForPaymentProblem", () => {
-  it("adds the payment problem flag to the cart URL", () => {
-    expect(buildCartUrlForPaymentProblem("failed")).toBe(PayUCartUrl + "?payuPayment=failed");
-    expect(buildCartUrlForPaymentProblem("canceled")).toBe(PayUCartUrl + "?payuPayment=canceled");
   });
 });
