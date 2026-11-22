@@ -71,6 +71,11 @@ $w.onReady(() => {
 
 The parameter, lightbox name and messages are provider-neutral and live in
 `src/public/payment-status.js`, so another payment provider can reuse them.
+
+Wix Checkout page code can't be changed, so on checkout the popup comes from a
+**site plugin** in the `checkout:top` slot instead. It's a small private Wix app
+in [`checkout-plugin/`](checkout-plugin/README.md); see
+[the plan](docs/checkout-popup-plugin-plan.md) for status.
 | status lookup failed | `pendingUrl` |
 
 ## Project structure

@@ -40,6 +40,28 @@ plugin** placed in a Checkout **slot**.
   `addSitePlugin(pluginId, { placement })`, or by hand in the editor (Plugins
   panel, **+ Add**).
 
+## Status (2026-11-22)
+
+Done in code (`checkout-plugin/`, see its README):
+
+- Steps 2–5: app project, shared status logic with a sync test, the plugin
+  custom element, and unit and DOM tests.
+- The app uses the **new Wix CLI** (`@wix/custom-extensions`). The legacy CLI
+  for Apps is deprecated (end of life 2027-02-28). The new CLI has no
+  react-to-webcomponent: a site plugin is a plain `HTMLElement` class.
+- `placementsSlotIds` and `installation.autoAdd` are set, so step 6 may need
+  no manual work.
+- `wix app build` works with a dummy client ID: the manifest has the
+  `checkout:top` slot ID.
+
+Still to do, all needing a Wix login:
+
+- Step 1 (spike) on a dev site, step 7 (release and install) and step 9
+  (end-to-end check). The Playwright smoke test from step 5 waits for a dev
+  site URL.
+- Step 8 (cleanup) waits until the plugin is confirmed on the live checkout.
+  Until then the site page code and lightbox stay as a fallback.
+
 ## Steps
 
 1. **Spike (about half a day).** Generate a throwaway plugin in `checkout:top`

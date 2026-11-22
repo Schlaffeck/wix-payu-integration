@@ -1,0 +1,4 @@
+{
+  "extends": "@wix/custom-extensions/tsconfigs/base",
+  "include": ["src", "tests"]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "checkout-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Wix app with a Checkout site plugin that shows a popup after a failed or canceled payment",
+  "dependencies": {
+    "@wix/cli-zero-config-flow": "^1.0.12",
+    "@wix/custom-extensions": "^1.0.11",
+    "@wix/design-system": "^1.354.1",
+    "@wix/editor": "^1.1055.0",
+    "@wix/essentials": "^1.0.15",
+    "@wix/site": "^1.72.0",
+    "@wix/site-location": "^1.34.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@wix/cli": "^1.2.15",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.8.2",
+    "vitest": "^3.2.7"
+  },
+  "scripts": {
+    "wix": "wix",
+    "dev": "wix app dev",
+    "build": "wix app build",
+    "preview": "wix app preview",
+    "release": "wix app release",
+    "generate": "wix app generate",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}
