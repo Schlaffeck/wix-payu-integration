@@ -5,6 +5,10 @@
 //
 // A failed or canceled payment sends the buyer back to checkout with
 // ?paymentStatus=failed|canceled, and the page shows a popup.
+//
+// The checkout plugin app keeps a copy in checkout-plugin/src/shared/payment-status.ts
+// (an app can't import site code). Change both; tests/public/payment-status-sync.test.js
+// checks they match.
 
 export const PAYMENT_STATUS_QUERY_PARAMETER = "paymentStatus";
 
